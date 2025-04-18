@@ -1,0 +1,7 @@
+ARG_ENABLE('waitline', 'waitline support', 'no');
+
+if (PHP_WAITLINE != 'no') {
+	AC_DEFINE('HAVE_WAITLINE', 1, 'waitline support enabled');
+
+	EXTENSION('waitline', 'waitline.c', null, '/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1');
+}
