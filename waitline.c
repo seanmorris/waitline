@@ -47,7 +47,8 @@ EM_ASYNC_JS(int, waitline_real_consume_stdin_line, (char *buf, int max_length), 
 
 	let input;
 
-	Module.triggerStdin();
+	if(Module.triggerStdin) Module.triggerStdin();
+	else console.warn('Module does not implement `.triggerStdin()`');
 
 	if(Module.inputDataQueue.length)
 	{
@@ -58,6 +59,7 @@ EM_ASYNC_JS(int, waitline_real_consume_stdin_line, (char *buf, int max_length), 
 		let a, r;
 		const promise = new Promise((accept, reject) => [a, r] = [ accept, reject ]);
 		Module.awaitingInput = a;
+		Module.readyForInput();
 		input = String(await promise);
 	}
 
