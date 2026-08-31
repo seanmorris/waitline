@@ -1,0 +1,131 @@
+/* This is a generated file, edit the .stub.php file instead.
+ * Stub hash: 02cb597f17dc16f7fd73a377968294305a873ed6 */
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_readline, 0, 0, MAY_BE_STRING|MAY_BE_FALSE)
+	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, prompt, IS_STRING, 1, "null")
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_readline_info, 0, 0, IS_MIXED, 0)
+	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, var_name, IS_STRING, 1, "null")
+	ZEND_ARG_INFO_WITH_DEFAULT_VALUE(0, value, "null")
+ZEND_END_ARG_INFO()
+
+#if PHP_VERSION_ID >= 80500
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_readline_add_history, 0, 1, IS_TRUE, 0)
+	ZEND_ARG_TYPE_INFO(0, prompt, IS_STRING, 0)
+ZEND_END_ARG_INFO()
+#endif
+
+#if !(PHP_VERSION_ID >= 80500)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_readline_add_history, 0, 1, _IS_BOOL, 0)
+	ZEND_ARG_TYPE_INFO(0, prompt, IS_STRING, 0)
+ZEND_END_ARG_INFO()
+#endif
+
+#if PHP_VERSION_ID >= 80500
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_readline_clear_history, 0, 0, IS_TRUE, 0)
+ZEND_END_ARG_INFO()
+#endif
+
+#if !(PHP_VERSION_ID >= 80500)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_readline_clear_history, 0, 0, _IS_BOOL, 0)
+ZEND_END_ARG_INFO()
+#endif
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_readline_list_history, 0, 0, IS_ARRAY, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_readline_read_history, 0, 0, _IS_BOOL, 0)
+	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, filename, IS_STRING, 1, "null")
+ZEND_END_ARG_INFO()
+
+#define arginfo_readline_write_history arginfo_readline_read_history
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_readline_completion_function, 0, 1, _IS_BOOL, 0)
+	ZEND_ARG_TYPE_INFO(0, callback, IS_CALLABLE, 0)
+ZEND_END_ARG_INFO()
+
+#if PHP_VERSION_ID >= 80500
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_readline_callback_handler_install, 0, 2, IS_TRUE, 0)
+	ZEND_ARG_TYPE_INFO(0, prompt, IS_STRING, 0)
+	ZEND_ARG_TYPE_INFO(0, callback, IS_CALLABLE, 0)
+ZEND_END_ARG_INFO()
+#endif
+
+#if !(PHP_VERSION_ID >= 80500)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_readline_callback_handler_install, 0, 2, _IS_BOOL, 0)
+	ZEND_ARG_TYPE_INFO(0, prompt, IS_STRING, 0)
+	ZEND_ARG_TYPE_INFO(0, callback, IS_CALLABLE, 0)
+ZEND_END_ARG_INFO()
+#endif
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_readline_callback_read_char, 0, 0, IS_VOID, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_readline_callback_handler_remove, 0, 0, _IS_BOOL, 0)
+ZEND_END_ARG_INFO()
+
+#define arginfo_readline_redisplay arginfo_readline_callback_read_char
+
+#define arginfo_readline_on_new_line arginfo_readline_callback_read_char
+
+ZEND_FUNCTION(readline);
+ZEND_FUNCTION(readline_info);
+#if PHP_VERSION_ID >= 80500
+ZEND_FUNCTION(readline_add_history);
+#endif
+#if !(PHP_VERSION_ID >= 80500)
+ZEND_FUNCTION(readline_add_history);
+#endif
+#if PHP_VERSION_ID >= 80500
+ZEND_FUNCTION(readline_clear_history);
+#endif
+#if !(PHP_VERSION_ID >= 80500)
+ZEND_FUNCTION(readline_clear_history);
+#endif
+ZEND_FUNCTION(readline_list_history);
+ZEND_FUNCTION(readline_read_history);
+ZEND_FUNCTION(readline_write_history);
+ZEND_FUNCTION(readline_completion_function);
+#if PHP_VERSION_ID >= 80500
+ZEND_FUNCTION(readline_callback_handler_install);
+#endif
+#if !(PHP_VERSION_ID >= 80500)
+ZEND_FUNCTION(readline_callback_handler_install);
+#endif
+ZEND_FUNCTION(readline_callback_read_char);
+ZEND_FUNCTION(readline_callback_handler_remove);
+ZEND_FUNCTION(readline_redisplay);
+ZEND_FUNCTION(readline_on_new_line);
+
+static const zend_function_entry ext_functions[] = {
+	ZEND_FE(readline, arginfo_readline)
+	ZEND_FE(readline_info, arginfo_readline_info)
+#if PHP_VERSION_ID >= 80500
+	ZEND_FE(readline_add_history, arginfo_readline_add_history)
+#endif
+#if !(PHP_VERSION_ID >= 80500)
+	ZEND_FE(readline_add_history, arginfo_readline_add_history)
+#endif
+#if PHP_VERSION_ID >= 80500
+	ZEND_FE(readline_clear_history, arginfo_readline_clear_history)
+#endif
+#if !(PHP_VERSION_ID >= 80500)
+	ZEND_FE(readline_clear_history, arginfo_readline_clear_history)
+#endif
+	ZEND_FE(readline_list_history, arginfo_readline_list_history)
+	ZEND_FE(readline_read_history, arginfo_readline_read_history)
+	ZEND_FE(readline_write_history, arginfo_readline_write_history)
+	ZEND_FE(readline_completion_function, arginfo_readline_completion_function)
+#if PHP_VERSION_ID >= 80500
+	ZEND_FE(readline_callback_handler_install, arginfo_readline_callback_handler_install)
+#endif
+#if !(PHP_VERSION_ID >= 80500)
+	ZEND_FE(readline_callback_handler_install, arginfo_readline_callback_handler_install)
+#endif
+	ZEND_FE(readline_callback_read_char, arginfo_readline_callback_read_char)
+	ZEND_FE(readline_callback_handler_remove, arginfo_readline_callback_handler_remove)
+	ZEND_FE(readline_redisplay, arginfo_readline_redisplay)
+	ZEND_FE(readline_on_new_line, arginfo_readline_on_new_line)
+	ZEND_FE_END
+};
