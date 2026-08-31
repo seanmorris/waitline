@@ -66,6 +66,11 @@ php.addEventListener('stdin-request', async () => {
 await php.run();
 ```
 
+For `readline()` and callback-mode reads, the `stdin-request` event includes
+the active PHP prompt as `event.detail.prompt`. Interactive shell reads that
+do not supply their own prompt report `null`, so a host can retain its normal
+shell prompt as the fallback.
+
 ## When You Need It
 
 Use `waitline` when you are:

@@ -166,10 +166,11 @@ static void waitline_add_history_entry(const char *line, size_t line_length)
  * awaitingInput from provideInput(). Keeping this transport in one place makes
  * readline() and the custom interactive shell consume input identically.
  */
-EM_ASYNC_JS(char *, waitline_real_read_line, (void), {
+EM_ASYNC_JS(char *, waitline_real_read_line, (const char *prompt, size_t prompt_length), {
 	const queue = Array.isArray(Module.inputDataQueue)
 		? Module.inputDataQueue
 		: (Module.inputDataQueue = []);
+	const currentPrompt = prompt ? UTF8ToString(prompt, prompt_length) : null;
 	let input;
 
 	if (queue.length) {
@@ -183,7 +184,7 @@ EM_ASYNC_JS(char *, waitline_real_read_line, (void), {
 		Module.awaitingInput = resolveInput;
 
 		if (Module.triggerStdin) {
-			Module.triggerStdin();
+			Module.triggerStdin(currentPrompt);
 		} else {
 			console.warn('Module does not implement `.triggerStdin()`');
 		}
@@ -221,11 +222,15 @@ EM_ASYNC_JS(char *, waitline_real_read_line, (void), {
 	return buffer;
 });
 
-static char *waitline_read_line(const char *prompt, size_t prompt_length)
+static char *waitline_read_line(
+	const char *prompt,
+	size_t prompt_length,
+	zend_bool update_prompt
+)
 {
 	char *line;
 
-	if (prompt) {
+	if (prompt && update_prompt) {
 		waitline_replace_buffer(
 			&waitline_prompt,
 			&waitline_prompt_length,
@@ -237,7 +242,7 @@ static char *waitline_read_line(const char *prompt, size_t prompt_length)
 		}
 	}
 
-	line = waitline_real_read_line();
+	line = waitline_real_read_line(prompt, prompt_length);
 	if (!line) {
 		return NULL;
 	}
@@ -265,7 +270,7 @@ int waitline_real_consume_stdin_line(char *buffer, int max_length)
 		return -1;
 	}
 
-	line = waitline_read_line(NULL, 0);
+	line = waitline_read_line(NULL, 0, 0);
 	if (!line) {
 		buffer[0] = '\0';
 		return -1;
@@ -389,7 +394,8 @@ PHP_FUNCTION(readline)
 
 	line = waitline_read_line(
 		prompt ? ZSTR_VAL(prompt) : NULL,
-		prompt ? ZSTR_LEN(prompt) : 0
+		prompt ? ZSTR_LEN(prompt) : 0,
+		1
 	);
 
 	if (!line) {
@@ -746,7 +752,7 @@ PHP_FUNCTION(readline_callback_read_char)
 		return;
 	}
 
-	line = waitline_read_line(NULL, 0);
+	line = waitline_read_line(waitline_prompt, waitline_prompt_length, 0);
 	if (line) {
 		ZVAL_STRING(&parameter, line);
 		free(line);
