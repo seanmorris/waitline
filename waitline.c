@@ -237,9 +237,6 @@ static char *waitline_read_line(
 			prompt,
 			prompt_length
 		);
-		if (prompt_length) {
-			waitline_write(prompt, prompt_length);
-		}
 	}
 
 	line = waitline_real_read_line(prompt, prompt_length);
@@ -733,10 +730,6 @@ PHP_FUNCTION(readline_callback_handler_install)
 		prompt_length
 	);
 
-	if (prompt_length) {
-		waitline_write(prompt, prompt_length);
-	}
-
 	RETURN_TRUE;
 }
 
@@ -775,9 +768,6 @@ PHP_FUNCTION(readline_callback_read_char)
 		zval_ptr_dtor(&retval);
 	}
 
-	if (Z_TYPE(waitline_line_callback) != IS_UNDEF && waitline_prompt_length) {
-		waitline_write(waitline_prompt, waitline_prompt_length);
-	}
 }
 
 PHP_FUNCTION(readline_callback_handler_remove)

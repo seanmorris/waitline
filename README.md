@@ -69,7 +69,9 @@ await php.run();
 For `readline()` and callback-mode reads, the `stdin-request` event includes
 the active PHP prompt as `event.detail.prompt`. Interactive shell reads that
 do not supply their own prompt report `null`, so a host can retain its normal
-shell prompt as the fallback.
+shell prompt as the fallback. Waitline does not also write automatic prompts
+to PHP stdout; the host owns rendering the prompt delivered with the input
+request, which prevents browser terminals from displaying it twice.
 
 ## When You Need It
 
