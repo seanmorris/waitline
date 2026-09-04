@@ -76,11 +76,29 @@ bool hasPipeIn  = false;
 bool hasPipeOut = false;
 bool hasPipeErr = false;
 
+/**
+ * Writes a byte sequence through PHP's configured output layer.
+ *
+ * @param value Bytes to write; the value does not need to be null-terminated.
+ * @param value_length Number of bytes to write.
+ * @return Number of bytes accepted by PHP's output layer.
+ */
 static size_t waitline_write(const char *value, size_t value_length)
 {
 	return php_write((void *) value, value_length);
 }
 
+/**
+ * Replaces a persistent string buffer and records its byte length.
+ *
+ * The previous allocation is released and the replacement is always
+ * null-terminated.
+ *
+ * @param target Address of the persistent buffer pointer to replace.
+ * @param target_length Address at which to store the replacement byte length.
+ * @param value Bytes to copy into the replacement buffer.
+ * @param value_length Number of bytes to copy.
+ */
 static void waitline_replace_buffer(
 	char **target,
 	size_t *target_length,
@@ -103,6 +121,11 @@ static void waitline_replace_buffer(
 	*target_length = value_length;
 }
 
+/**
+ * Releases a retained PHP callback and marks its zval as undefined.
+ *
+ * @param callback Callback zval owned by waitline.
+ */
 static void waitline_reset_callback(zval *callback)
 {
 	if (Z_TYPE_P(callback) != IS_UNDEF) {
@@ -111,6 +134,7 @@ static void waitline_reset_callback(zval *callback)
 	}
 }
 
+/** Releases every persistent history string while retaining the list storage. */
 static void waitline_clear_history_entries(void)
 {
 	size_t index;
@@ -122,6 +146,7 @@ static void waitline_clear_history_entries(void)
 	waitline_history_size = 0;
 }
 
+/** Releases all persistent history strings and the history list itself. */
 static void waitline_free_history(void)
 {
 	waitline_clear_history_entries();
@@ -134,6 +159,12 @@ static void waitline_free_history(void)
 	waitline_history_capacity = 0;
 }
 
+/**
+ * Appends a byte sequence to the persistent in-memory history.
+ *
+ * @param line Line bytes to copy; the value does not need to be null-terminated.
+ * @param line_length Number of bytes in the line.
+ */
 static void waitline_add_history_entry(const char *line, size_t line_length)
 {
 	char *entry;
@@ -161,10 +192,17 @@ static void waitline_add_history_entry(const char *line, size_t line_length)
 	waitline_history[waitline_history_size++] = entry;
 }
 
-/*
+/**
+ * Waits asynchronously for the host to provide one complete input line.
+ *
  * PhpCliWeb and PhpCliNode both expose inputDataQueue/awaitingInput and resolve
  * awaitingInput from provideInput(). Keeping this transport in one place makes
  * readline() and the custom interactive shell consume input identically.
+ *
+ * @param prompt Optional UTF-8 prompt forwarded to Module.triggerStdin().
+ * @param prompt_length Byte length of prompt.
+ * @return A malloc-allocated UTF-8 line without its delimiter, or NULL when the
+ *     host signals end-of-input or allocation fails. The caller owns the result.
  */
 EM_ASYNC_JS(char *, waitline_real_read_line, (const char *prompt, size_t prompt_length), {
 	const queue = Array.isArray(Module.inputDataQueue)
@@ -222,6 +260,14 @@ EM_ASYNC_JS(char *, waitline_real_read_line, (const char *prompt, size_t prompt_
 	return buffer;
 });
 
+/**
+ * Reads one line and mirrors it into waitline's readline-compatible state.
+ *
+ * @param prompt Optional prompt to forward to the host.
+ * @param prompt_length Byte length of prompt.
+ * @param update_prompt Whether a supplied prompt replaces the retained prompt.
+ * @return A malloc-allocated line owned by the caller, or NULL at end-of-input.
+ */
 static char *waitline_read_line(
 	const char *prompt,
 	size_t prompt_length,
@@ -257,6 +303,16 @@ static char *waitline_read_line(
 	return line;
 }
 
+/**
+ * Reads a host-provided line into a caller-owned fixed-size buffer.
+ *
+ * Input longer than the destination is truncated and the destination is always
+ * null-terminated when it is valid.
+ *
+ * @param buffer Destination buffer.
+ * @param max_length Total destination capacity, including the null terminator.
+ * @return Number of bytes copied, or -1 for invalid arguments or end-of-input.
+ */
 int waitline_real_consume_stdin_line(char *buffer, int max_length)
 {
 	char *line;
@@ -287,21 +343,46 @@ int waitline_real_consume_stdin_line(char *buffer, int max_length)
 	return (int) copy_length;
 }
 
+/**
+ * Reads a host-provided line into a WAITLINE_MAX_INPUT-byte buffer.
+ *
+ * @param buffer Destination with capacity of at least WAITLINE_MAX_INPUT bytes.
+ * @return Number of bytes copied, or -1 at end-of-input.
+ */
 int waitline_consume_stdin_line(char *buffer)
 {
 	return waitline_real_consume_stdin_line(buffer, WAITLINE_MAX_INPUT);
 }
 
+/**
+ * Suppresses PHP CLI's normal prompt write because the host renders the prompt.
+ *
+ * @param str Ignored prompt bytes.
+ * @param str_length Ignored prompt length.
+ * @return SIZE_MAX, the CLI callback convention used to decline the write.
+ */
 static size_t waitline_shell_write(const char *str, size_t str_length)
 {
 	return (size_t) -1;
 }
 
+/**
+ * Suppresses PHP CLI's unbuffered prompt write because the host renders it.
+ *
+ * @param str Ignored prompt bytes.
+ * @param str_length Ignored prompt length.
+ * @return SIZE_MAX, the CLI callback convention used to decline the write.
+ */
 static size_t waitline_shell_ub_write(const char *str, size_t str_length)
 {
 	return (size_t) -1;
 }
 
+/**
+ * Runs PHP's interactive shell using waitline as its asynchronous line source.
+ *
+ * @return PHP's current process exit status.
+ */
 static int waitline_shell_run(void)
 {
 	char *line = emalloc(WAITLINE_MAX_INPUT);
@@ -379,6 +460,7 @@ static int waitline_shell_run(void)
 	return EG(exit_status);
 }
 
+/** Implements readline() using the shared asynchronous host transport. */
 PHP_FUNCTION(readline)
 {
 	zend_string *prompt = NULL;
@@ -403,6 +485,7 @@ PHP_FUNCTION(readline)
 	free(line);
 }
 
+/** Implements readline_info() over waitline's retained compatibility state. */
 PHP_FUNCTION(readline_info)
 {
 	zend_string *what = NULL;
@@ -558,6 +641,7 @@ PHP_FUNCTION(readline_info)
 	}
 }
 
+/** Implements readline_add_history() for the in-memory history list. */
 PHP_FUNCTION(readline_add_history)
 {
 	zend_string *line;
@@ -570,6 +654,7 @@ PHP_FUNCTION(readline_add_history)
 	RETURN_TRUE;
 }
 
+/** Implements readline_clear_history() for the in-memory history list. */
 PHP_FUNCTION(readline_clear_history)
 {
 	ZEND_PARSE_PARAMETERS_NONE();
@@ -577,6 +662,7 @@ PHP_FUNCTION(readline_clear_history)
 	RETURN_TRUE;
 }
 
+/** Implements readline_list_history() in insertion order. */
 PHP_FUNCTION(readline_list_history)
 {
 	size_t index;
@@ -589,6 +675,12 @@ PHP_FUNCTION(readline_list_history)
 	}
 }
 
+/**
+ * Resolves an explicit history filename or waitline's default history path.
+ *
+ * @param filename Optional caller-provided filename.
+ * @return A newly allocated zend_string owned by the caller.
+ */
 static zend_string *waitline_history_path(zend_string *filename)
 {
 	const char *home;
@@ -605,6 +697,7 @@ static zend_string *waitline_history_path(zend_string *filename)
 	return zend_string_init(".history", sizeof(".history") - 1, false);
 }
 
+/** Implements readline_read_history() using PHP's stream wrappers. */
 PHP_FUNCTION(readline_read_history)
 {
 	zend_string *filename = NULL;
@@ -646,6 +739,7 @@ PHP_FUNCTION(readline_read_history)
 	RETURN_TRUE;
 }
 
+/** Implements readline_write_history() using PHP's stream wrappers. */
 PHP_FUNCTION(readline_write_history)
 {
 	zend_string *filename = NULL;
@@ -689,6 +783,12 @@ PHP_FUNCTION(readline_write_history)
 	RETURN_BOOL(success);
 }
 
+/**
+ * Implements readline_completion_function().
+ *
+ * The callback is retained for API compatibility. Waitline's complete-line
+ * transport does not run an in-Wasm completion editor that can invoke it.
+ */
 PHP_FUNCTION(readline_completion_function)
 {
 	zend_fcall_info fci;
@@ -703,6 +803,7 @@ PHP_FUNCTION(readline_completion_function)
 	RETURN_TRUE;
 }
 
+/** Implements readline_callback_handler_install() for complete-line input. */
 PHP_FUNCTION(readline_callback_handler_install)
 {
 	char *prompt;
@@ -733,6 +834,12 @@ PHP_FUNCTION(readline_callback_handler_install)
 	RETURN_TRUE;
 }
 
+/**
+ * Implements readline_callback_read_char().
+ *
+ * One invocation consumes one complete host-provided line and dispatches it to
+ * the installed callback. End-of-input is dispatched as null.
+ */
 PHP_FUNCTION(readline_callback_read_char)
 {
 	char *line;
@@ -770,6 +877,7 @@ PHP_FUNCTION(readline_callback_read_char)
 
 }
 
+/** Implements readline_callback_handler_remove() for the retained callback. */
 PHP_FUNCTION(readline_callback_handler_remove)
 {
 	ZEND_PARSE_PARAMETERS_NONE();
@@ -782,6 +890,7 @@ PHP_FUNCTION(readline_callback_handler_remove)
 	RETURN_TRUE;
 }
 
+/** Implements readline_redisplay() by writing the retained prompt and buffer. */
 PHP_FUNCTION(readline_redisplay)
 {
 	ZEND_PARSE_PARAMETERS_NONE();
@@ -794,11 +903,15 @@ PHP_FUNCTION(readline_redisplay)
 	}
 }
 
+/** Implements readline_on_new_line() as a compatibility no-op. */
 PHP_FUNCTION(readline_on_new_line)
 {
 	ZEND_PARSE_PARAMETERS_NONE();
 }
 
+/**
+ * Initializes persistent waitline state and installs the PHP CLI shell hooks.
+ */
 PHP_MINIT_FUNCTION(waitline)
 {
 	cli_shell_callbacks_t *callbacks;
@@ -830,6 +943,7 @@ PHP_MINIT_FUNCTION(waitline)
 	return SUCCESS;
 }
 
+/** Releases persistent state and removes waitline's PHP CLI shell hooks. */
 PHP_MSHUTDOWN_FUNCTION(waitline)
 {
 	cli_shell_callbacks_t *callbacks;
@@ -861,6 +975,7 @@ PHP_MSHUTDOWN_FUNCTION(waitline)
 	return SUCCESS;
 }
 
+/** Releases callbacks that may retain values from the completed request. */
 PHP_RSHUTDOWN_FUNCTION(waitline)
 {
 	waitline_reset_callback(&waitline_completion_callback);
@@ -868,6 +983,7 @@ PHP_RSHUTDOWN_FUNCTION(waitline)
 	return SUCCESS;
 }
 
+/** Publishes waitline's extension status in phpinfo(). */
 PHP_MINFO_FUNCTION(waitline)
 {
 	php_info_print_table_start();
@@ -878,6 +994,7 @@ PHP_MINFO_FUNCTION(waitline)
 	DISPLAY_INI_ENTRIES();
 }
 
+/** Describes the waitline extension and its lifecycle callbacks to Zend. */
 zend_module_entry waitline_module_entry = {
 	STANDARD_MODULE_HEADER,
 	"waitline",
